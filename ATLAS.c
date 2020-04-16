@@ -12,9 +12,9 @@ typedef enum {
     TK_EOF,         // 入力の終わりを表すトークン
 } TokenKind;
 
-typedef struct Token Token;
 
 // トークン型
+typedef struct Token Token;
 struct Token {
     TokenKind kind; // トークンの型
     Token *next;    // 次の入力トークン
@@ -25,11 +25,28 @@ struct Token {
 // 現在着目しているトークン
 Token *token;
 
+// 入力プログラム
+char *user_input;
+
 // エラーを報告するための関数
 // printfと同じ引数をとる
 void error(char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, "\n");
+    exit(1);
+}
+
+// エラーが起きた場所と内容を報告する関数
+void error_at(char *loc, char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+
+    int pos = loc - user_input;
+    fprintf(stderr, "%s\n", user_input);
+    fprintf(stderr, "%*s", pos, "");    // pos個の空白を出力
+    fprintf(stderr, "^ ");
     vfprintf(stderr, fmt, ap);
     fprintf(stderr, "\n");
     exit(1);
@@ -48,7 +65,7 @@ bool consume(char op) {
 // それ以外の場合にはエラーを報告する。
 void expect(char op) {
     if (token->kind != TK_RESERVED || token->str[0] != op)
-        error("'%c'ではありません", op);
+        error_at(token->str, "'%c'ではありません", op);
     token = token->next;
 }
 
@@ -56,7 +73,7 @@ void expect(char op) {
 // それ以外の場合にはエラーを報告する。
 int expect_number() {
     if (token->kind != TK_NUM)
-        error("数ではありません。");
+        error_at(token->str, "数ではありません。");
     int val = token->val;
     token = token->next;
     return val;
@@ -76,7 +93,8 @@ Token *new_token(TokenKind kind, Token *cur, char *str) {
 }
 
 // 入力文字列pをトークナイズしてそれを返す。
-Token *tokenize(char *p) {
+Token *tokenize() {
+    char *p = user_input;
     Token head;
     head.next = NULL;
     Token *cur = &head;
@@ -99,7 +117,7 @@ Token *tokenize(char *p) {
             continue;
         }
 
-        error("トークナイズできません。");
+        error(p, "トークナイズできません。");
     }
 
     new_token(TK_EOF, cur, p);
@@ -108,12 +126,15 @@ Token *tokenize(char *p) {
 
 int main(int argc, char **argv) {
     if (argc != 2) {
-        fprintf(stderr, "引数の数が間違っています。");
+        error("引数の数が間違っています。");
         return 1;
     }
 
+    // 入力をuser_inputに保存する
+    user_input = argv[1];
+
     // トークナイズする
-    token = tokenize(argv[1]);
+    token = tokenize();
 
     // アセンブリの前半部分を出力
     printf(".intel_syntax noprefix\n");
