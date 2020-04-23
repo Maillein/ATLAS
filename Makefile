@@ -1,6 +1,11 @@
-CFLAGS = -std=c11 -g -static
+CFLAGS	= -std=c11 -g -static -Wall -Wextra
+SRCS	= $(wildcard *.c)
+OBJS	= $(SRCS:.c=.o)
 
-ATLAS: ATLAS.c
+ATLAS: $(OBJS)
+	$(CC) -o $@ $(OBJS) $(LDFLAGS)
+
+$(OBJS): ATLAS.h
 
 # コマンド
 .PHONY: all test clean
