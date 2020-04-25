@@ -52,3 +52,21 @@ void gen(Node *node) {
 
     printf("\tpush\trax\n");
 }
+
+void codegen(Node *node) {
+    // アセンブリの前半部分を出力
+    printf(".intel_syntax noprefix\n");
+    printf(".global main\n");
+    printf("main:\n");
+
+    // 抽象構文木を下りながらコード生成
+    for (Node *n = node; n; n = n->next) {
+        gen(n);
+        // スタックトップに式全体の値が残っているはずなので
+        // それをRAXにロードする
+        printf("\tpop\trax\n");
+    }
+
+    // RAXにはプログラムの値が入っている
+    printf("\tret\n");
+}

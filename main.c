@@ -11,19 +11,10 @@ int main(int argc, char **argv) {
     token = tokenize();
 
     // パースする
-    Node *node = expr();
+    Node *node = program();
 
-    // アセンブリの前半部分を出力
-    printf(".intel_syntax noprefix\n");
-    printf(".global main\n");
-    printf("main:\n");
+    // コードを生成する
+    codegen(node);
 
-    // 抽象構文木を下りながらコード生成
-    gen(node);
-
-    // スタックトップに式全体の値が残っているはずなので
-    // それをRAXにロードして関数からの返り値とする
-    printf("\tpop\trax\n");
-    printf("\tret\n");
     return 0;
 }

@@ -64,17 +64,18 @@ typedef enum {
 typedef struct Node Node;
 struct Node{
     NodeKind kind;  // ノードの型
+    Node *next;     // 次のノード
     Node *lhs;      // 左辺(left-hand side)
     Node *rhs;      // 右辺(right-hand side)
     int val;        // kindがND_NUMの場合のみ使う
 };
 
 // プロトタイプ宣言
-Node *expr(void);
+Node *program(void);
 
 //
 //  toknize.c
 //
 
 // プロトタイプ宣言
-void gen(Node *node);
+void codegen(Node *node);
