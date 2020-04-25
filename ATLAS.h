@@ -1,5 +1,4 @@
-#ifndef ATLAS_C_
-#define ATLAS_C_
+#pragma once
 
 #include <ctype.h>
 #include <stdarg.h>
@@ -79,4 +78,3 @@ Node *expr(void);
 
 // プロトタイプ宣言
 void gen(Node *node);
-#endif // ATLAS_C_
