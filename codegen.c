@@ -1,9 +1,49 @@
 #include "ATLAS.h"
 
-void gen(Node *node) {
-    if (node->kind == ND_NUM) {
-        printf("\tpush\t%d\n", node->val);
+// 左辺値のアドレスを計算し、スタックに積む
+static void gen_addr(Node *node) {
+    if (node->kind == ND_LVAL) {
+        int offset = *(node->name) - 'a' + 1;
+        printf("\tlea\trax, [rbp-%d]\n", offset * 8);
+        printf("\tpush\trax\n");
         return;
+    }
+
+    error("左辺地ではありません。");
+}
+
+// スタックトップにあるアドレスから値をにロードし、スタックに詰む
+static void load(void) {
+    printf("\tpop\trax\n");
+    printf("\tmov\trax, [rax]\n");
+    printf("\tpush\trax\n");
+    return;
+}
+
+static void store(void) {
+    printf("\tpop\trdi\n");
+    printf("\tpop\trax\n");
+    printf("\tmov\t[rax], rdi\n");
+    printf("\tpush\trdi\n");
+    return;
+}
+
+static void gen(Node *node) {
+    switch (node->kind) {
+        case ND_NUM:
+            printf("\tpush\t%ld\n", node->val);
+            return;
+        case ND_LVAL:
+            gen_addr(node);
+            load();
+            return;
+        case ND_ASSIGN:
+            gen_addr(node->lhs);
+            gen(node->rhs);
+            store();
+            return;
+        default:
+            break;
     }
 
     gen(node->lhs);
@@ -59,14 +99,20 @@ void codegen(Node *node) {
     printf(".global main\n");
     printf("main:\n");
 
+    // main関数のプロローグを出力
+    printf("\tpush\trbp\n");
+    printf("\tmov\trbp, rsp\n");
+    printf("\tsub\trsp, 208\n");
+
     // 抽象構文木を下りながらコード生成
     for (Node *n = node; n; n = n->next) {
         gen(n);
-        // スタックトップに式全体の値が残っているはずなので
-        // それをRAXにロードする
         printf("\tpop\trax\n");
     }
 
-    // RAXにはプログラムの値が入っている
+    // main関数のエピローグを出力する
+    // printf("\tmov\trsp, rbp\n");
+    // printf("\tpop\trbp\n");
+    printf("\tleaveq\n");
     printf("\tret\n");
 }

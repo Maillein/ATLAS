@@ -16,6 +16,7 @@ assert() {
     fi
 }
 
+# 数式
 assert 0 '0;'
 assert 42 '42;'
 assert 21 '5+20-4;'
@@ -27,18 +28,19 @@ assert 15 '-3*-5;'
 assert 10 '- -10;'
 assert 10 '- - +10;'
 
+# 等号
 assert 0 '0==1;'
 assert 1 '42==42;'
 assert 1 '0!=1;'
 assert 0 '42!=42;'
 
+# 大小関係
 assert 1 '0<1;'
 assert 0 '1<1;'
 assert 0 '2<1;'
 assert 1 '0<=1;'
 assert 1 '1<=1;'
 assert 0 '2<=1;'
-
 assert 1 '1>0;'
 assert 0 '1>1;'
 assert 0 '1>2;'
@@ -46,7 +48,12 @@ assert 1 '1>=0;'
 assert 1 '1>=1;'
 assert 0 '1>=2;'
 
+# 複数の式
 assert 3 '1; 2; 3;'
 assert 10 '(3 + 5) * 2; (30 + 40) / 7;'
+
+# 変数
+assert 42 'a = 42; a;'
+assert 3 'a = 1; b = 2; a + b;'
 
 echo OK

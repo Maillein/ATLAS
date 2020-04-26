@@ -38,6 +38,16 @@ bool consume(char *op) {
     return true;
 }
 
+// 次のトークンが識別子の場合、トークンを一つ読み進めてトークンを返す。
+// それ以外の場合にはエラーを報告する
+Token *consume_ident(void) {
+    if (token->kind != TK_IDENT)
+        return NULL;
+    Token *t = token;
+    token = token->next;
+    return t;
+}
+
 // 次のトークンが期待している記号の時には、トークンを一つ読み進める。
 // それ以外の場合にはエラーを報告する。
 void expect(char *op) {
@@ -48,7 +58,7 @@ void expect(char *op) {
 
 // 次のトークンが数値の場合、トークンを一つ読み進めてその数値を返す。
 // それ以外の場合にはエラーを報告する。
-long expect_number() {
+long expect_number(void) {
     if (token->kind != TK_NUM)
         error_at(token->str, "数ではありません。");
     int val = token->val;
@@ -56,7 +66,7 @@ long expect_number() {
     return val;
 }
 
-bool at_eof() {
+bool at_eof(void) {
     return token->kind == TK_EOF;
 }
 
@@ -102,6 +112,13 @@ Token *tokenize() {
             continue;
         }
 
+        // 一文字のアルファベットを変数として扱う
+        if ('a' <= *p && *p <= 'z') {
+            cur = new_token(TK_IDENT, cur, p++, 1);
+            continue;
+        }
+
+        // 数字
         if (isdigit(*p)) {
             cur = new_token(TK_NUM, cur, p, 0);
             cur->val = strtol(p, &p, 10);

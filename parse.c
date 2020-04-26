@@ -1,12 +1,12 @@
 #include "ATLAS.h"
 
-Node *new_node(NodeKind kind) {
+static Node *new_node(NodeKind kind) {
     Node *node = calloc(1, sizeof(Node));
     node->kind = kind;
     return node;
 }
 
-Node *new_binary(NodeKind kind, Node *lhs, Node *rhs) {
+static Node *new_binary(NodeKind kind, Node *lhs, Node *rhs) {
     Node *node = calloc(1, sizeof(Node));
     node->kind = kind;
     node->lhs = lhs;
@@ -14,21 +14,29 @@ Node *new_binary(NodeKind kind, Node *lhs, Node *rhs) {
     return node;
 }
 
-Node *new_num(int val) {
+static Node *new_num(int val) {
     Node *node = calloc(1, sizeof(Node));
     node->kind = ND_NUM;
     node->val = val;
     return node;
 }
 
-Node *stmt(void);
-Node *expr(void);
-Node *equality(void);
-Node *relational(void);
-Node *add(void);
-Node *mul(void);
-Node *unary(void);
-Node *primary(void);
+static Node *new_var(char *name) {
+    Node *node = calloc(1, sizeof(Node));
+    node->kind = ND_LVAL;
+    node->name = name;
+    return node;
+}
+
+static Node *stmt(void);
+static Node *expr(void);
+static Node *assign(void);
+static Node *equality(void);
+static Node *relational(void);
+static Node *add(void);
+static Node *mul(void);
+static Node *unary(void);
+static Node *primary(void);
 
 // program = stmt*
 Node *program(void) {
@@ -42,20 +50,28 @@ Node *program(void) {
     return head.next;
 }
 
-// stmt = expr ";"
-Node *stmt(void) {
-    Node *node = expr();
+// stmt = assign ";"
+static Node *stmt(void) {
+    Node *node = assign();
     expect(";");
     return node;
 }
 
-// expr = equality
-Node *expr(void) {
-    return equality();
+// expr = assign
+static Node *expr(void) {
+    return assign();
+}
+
+// assign = equality ("=" asssign)?
+static Node *assign(void) {
+    Node *node = equality();
+    if (consume("="))
+        node = new_binary(ND_ASSIGN, node, assign());
+    return node;
 }
 
 // equality = relational ("==" relational | "!=" relational)*
-Node *equality(void) {
+static Node *equality(void) {
     Node *node = relational();
     
     for (;;) {
@@ -69,7 +85,7 @@ Node *equality(void) {
 }
 
 // relational = add ("<" add | "<=" add | ">" add | ">=" add)*
-Node *relational(void) {
+static Node *relational(void) {
     Node *node = add();
 
     for (;;) {
@@ -87,7 +103,7 @@ Node *relational(void) {
 }
 
 // add = mul ("+" mul | "-" mul)*
-Node *add(void) {
+static Node *add(void) {
     Node *node = mul();
 
     for (;;) {
@@ -101,7 +117,7 @@ Node *add(void) {
 }
 
 // mul = unary ("*" unary | "/" unary)*
-Node *mul(void) {
+static Node *mul(void) {
     Node *node = unary();
 
     for (;;) {
@@ -115,7 +131,7 @@ Node *mul(void) {
 }
 
 // unary = ("+" | "-")? unary | primary 
-Node *unary(void) {
+static Node *unary(void) {
     if (consume("+"))
         return unary();
     if (consume("-"))
@@ -123,14 +139,19 @@ Node *unary(void) {
     return primary();
 }
 
-// primary = "(" expr ")" | num
-Node *primary(void) {
+// primary = "(" expr ")" | ident | num
+static Node *primary(void) {
     // 次のトークンが"("なら、"(" expr ")"のはず
     if (consume("(")) {
         Node *node = expr();
         expect(")");
         return node;
     }
+
+    // もしくは識別子
+    Token *token = consume_ident();
+    if (token)
+        return new_var(token->str);
 
     // そうでなければ数値のはず
     return new_num(expect_number());
